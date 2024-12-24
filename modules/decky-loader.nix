@@ -100,6 +100,7 @@ in
         description = "Steam Deck Plugin Loader";
 
         wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
 
         environment = let
           inherit (cfg.package.passthru) python;
