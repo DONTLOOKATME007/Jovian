@@ -2,7 +2,9 @@
 
 let
   inherit (lib)
+    mkDefault
     mkIf
+    mkMerge
     mkOption
     types
   ;
@@ -21,6 +23,14 @@ in
           default = false;
           description = ''
             Whether to enable the Steam Deck Plugin Loader.
+          '';
+        };
+
+         enableFHSEnvironment = mkOption {
+          type = types.bool;
+          default = false;
+          description = lib.mdDoc ''
+            Allows plugins shipping with prebuilt binaries to function (e.g. PowerTools).
           '';
         };
 
@@ -105,7 +115,15 @@ in
           chown -R "${cfg.user}:" "${cfg.stateDir}"
         '';
 
-        serviceConfig = {
+        serviceConfig = let
+          decky-loader = if !cfg.enableFHSEnvironment then
+            "${cfg.package}"
+          else
+            pkgs.buildFHSEnv {
+            name = "decky-loader";
+            runScript = "${cfg.package}/bin/decky-loader";
+          };
+        in {
           ExecStart = "${package}/bin/decky-loader";
           KillMode = "process";
           TimeoutStopSec = 45;
