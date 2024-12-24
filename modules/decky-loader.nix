@@ -10,9 +10,6 @@ let
   ;
   cfg = config.jovian.decky-loader;
 
-  package = cfg.package.overridePythonAttrs(old: {
-    dependencies = old.dependencies ++ (cfg.extraPythonPackages old.passthru.python.pkgs);
-  });
 in
 {
   options = {
