@@ -9,6 +9,10 @@ let
     types
   ;
   cfg = config.jovian.decky-loader;
+
+   package = cfg.package.overridePythonAttrs(old: {
+    dependencies = old.dependencies ++ (cfg.extraPythonPackages old.passthru.python.pkgs);
+  });
 in
 {
   options = {
@@ -123,7 +127,8 @@ in
             };
         in {
           ExecStart = "${decky-loader}/bin/decky-loader";
-          KillSignal = "SIGINT";
+          KillMode = "process";
+          TimeoutStopSec = 45;
         };
       };
     }
