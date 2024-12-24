@@ -108,7 +108,7 @@ in
           PLUGIN_PATH = "${cfg.stateDir}/plugins";
         };
 
-        path = cfg.extraPackages;
+        path = with pkgs; [ coreutils gawk ] cfg.extraPackages;
 
         preStart = ''
           mkdir -p "${cfg.stateDir}"
