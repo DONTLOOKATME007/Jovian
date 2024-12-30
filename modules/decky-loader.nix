@@ -2,15 +2,13 @@
 
 let
   inherit (lib)
-    mkDefault
     mkIf
-    mkMerge
     mkOption
     types
   ;
   cfg = config.jovian.decky-loader;
 
-   package = cfg.package.overridePythonAttrs(old: {
+  package = cfg.package.overridePythonAttrs(old: {
     dependencies = old.dependencies ++ (cfg.extraPythonPackages old.passthru.python.pkgs);
   });
 in
@@ -21,7 +19,7 @@ in
         enable = mkOption {
           type = types.bool;
           default = false;
-          description = lib.mdDoc ''
+          description = ''
             Whether to enable the Steam Deck Plugin Loader.
           '';
         };
@@ -38,7 +36,7 @@ in
           type = types.package;
           default = pkgs.decky-loader;
           defaultText = lib.literalExpression "pkgs.decky-loader";
-          description = lib.mdDoc ''
+          description = ''
             The loader package to use.
           '';
         };
@@ -47,7 +45,7 @@ in
           type = types.listOf types.package;
           example = lib.literalExpression "[ pkgs.curl pkgs.unzip ]";
           default = [];
-          description = lib.mdDoc ''
+          description = ''
             Extra packages to add to the service PATH.
           '';
         };
@@ -55,9 +53,9 @@ in
         extraPythonPackages = mkOption {
           type = types.functionTo (types.listOf types.package);
           example = lib.literalExpression "pythonPackages: with pythonPackages; [ hid ]";
-          default = pythonPackages: with pythonPackages; [];
-          defaultText = lib.literalExpression "pythonPackages: with pythonPackages; []";
-          description = lib.mdDoc ''
+          default = _: [];
+          defaultText = lib.literalExpression "pythonPackages: []";
+          description = ''
             Extra Python packages to add to the PYTHONPATH of the loader.
           '';
         };
@@ -65,7 +63,7 @@ in
         stateDir = mkOption {
           type = types.path;
           default = "/var/lib/decky-loader";
-          description = lib.mdDoc ''
+          description = ''
             Directory to store plugins and data.
           '';
         };
@@ -73,7 +71,7 @@ in
         user = mkOption {
           type = types.str;
           default = "decky";
-          description = lib.mdDoc ''
+          description = ''
             The user Decky Loader should run plugins as.
           '';
         };
@@ -102,16 +100,14 @@ in
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" ];
 
-        environment = let
-          inherit (cfg.package.passthru) python;
-        in {
+        environment = {
           UNPRIVILEGED_USER = cfg.user;
           UNPRIVILEGED_PATH = cfg.stateDir;
           PLUGIN_PATH = "${cfg.stateDir}/plugins";
-          PYTHONPATH = "${python.withPackages cfg.extraPythonPackages}/${python.sitePackages}";
+          LD_LIBRARY_PATH = lib.makeLibraryPath cfg.extraPackages;
         };
 
-        path = with pkgs; [ coreutils gawk ] ++ cfg.extraPackages;
+        path = cfg.extraPackages;
 
         preStart = ''
           mkdir -p "${cfg.stateDir}"
@@ -120,11 +116,11 @@ in
 
         serviceConfig = let
           decky-loader = if !cfg.enableFHSEnvironment then
-            "${cfg.package}"
+            "${package}"
           else
             pkgs.buildFHSEnv {
               name = "decky-loader";
-              runScript = "${cfg.package}/bin/decky-loader";
+              runScript = "${package}/bin/decky-loader";
             };
         in {
           ExecStart = "${decky-loader}/bin/decky-loader";
